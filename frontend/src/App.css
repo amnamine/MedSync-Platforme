@@ -105,12 +105,146 @@ button.danger {
   display: grid;
   place-items: center;
   background: radial-gradient(circle at 25% 20%, #bbecff, #f3fbff 40%, #e3f7ff);
+  position: relative;
+  overflow: hidden;
+}
+.particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 176, 244, 0.35);
+  left: var(--px);
+  top: var(--py);
+  transform: translate(calc((var(--mx, 50%) - 50%) * 0.08), calc((var(--my, 50%) - 50%) * 0.08));
+  animation: float 6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.2s);
+  transition: transform 0.3s ease;
+}
+.glow-orb {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 176, 244, 0.25), transparent 70%);
+  left: var(--mx, 50%);
+  top: var(--my, 50%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: left 0.4s ease, top 0.4s ease;
+}
+.glow-border {
+  box-shadow: 0 0 0 1px rgba(0, 176, 244, 0.2), 0 8px 32px rgba(0, 176, 244, 0.12);
+}
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(0, 176, 244, 0.2);
+}
+.stat { font-size: 2rem; font-weight: 700; color: #0e5a7a; margin: 0; }
+.critical-card { border-left: 4px solid #ef4444; }
+.realtime-dot { color: #16a34a; font-size: 0.85rem; }
+.realtime-dot::before { content: "● "; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.role-badge { font-size: 0.75rem; color: #2d6683; margin-bottom: 12px; padding: 4px 8px; background: #e8f7ff; border-radius: 8px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.calendar-slot { background: #fff9; padding: 12px; border-radius: 12px; display: grid; gap: 4px; border: 1px solid #d9efff; }
+.wide-modal { width: min(900px, 95vw); max-height: 80vh; overflow-y: auto; }
+.theme-admin { --accent: #00b0f4; --accent-bg: #e8f7ff; }
+.theme-medecin { --accent: #0891b2; --accent-bg: #ecfeff; }
+.theme-specialiste { --accent: #7c3aed; --accent-bg: #f3e8ff; }
+.theme-chirurgien { --accent: #dc2626; --accent-bg: #fef2f2; }
+.theme-infirmier { --accent: #16a34a; --accent-bg: #f0fdf4; }
+.theme-secretaire { --accent: #d97706; --accent-bg: #fffbeb; }
+.theme-admin .nav.active, .theme-medecin .nav.active, .theme-specialiste .nav.active,
+.theme-chirurgien .nav.active, .theme-infirmier .nav.active, .theme-secretaire .nav.active {
+  background: var(--accent-bg);
+  border-left: 3px solid var(--accent);
+}
+.theme-admin button:not(.secondary):not(.danger), .theme-medecin button:not(.secondary):not(.danger) { background: var(--accent); }
+.badge.role-administrateur { background: #dbeafe; color: #1e40af; }
+.badge.role-médecin { background: #cffafe; color: #0e7490; }
+.badge.role-spécialiste { background: #ede9fe; color: #6d28d9; }
+.badge.role-chirurgien { background: #fee2e2; color: #b91c1c; }
+.badge.role-infirmier { background: #dcfce7; color: #166534; }
+.badge.role-secrétaire { background: #fef3c7; color: #92400e; }
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
+  50% { transform: translateY(-18px) scale(1.2); opacity: 1; }
+}
+.lang-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+}
+.quote {
+  font-style: italic;
+  color: #1a5a7c;
+  min-height: 1.5em;
 }
 .login-card {
   width: min(460px, 92vw);
   padding: 28px;
   display: grid;
   gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.bell {
+  position: relative;
+  background: #f0f8ff;
+  color: #184c67;
+  font-size: 1.1rem;
+}
+.bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 2px 6px;
+}
+.toast {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  background: #00b0f4;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(27, 96, 129, 0.25);
+}
+.inline-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.item.unread {
+  border-left: 4px solid #00b0f4;
+}
+.mini {
+  font-size: 0.85rem;
+  color: #2d6683;
+  margin-top: 4px;
+}
+.mini-item {
+  padding: 6px 0;
+}
+.card.wide {
+  grid-column: span 2;
 }
 .subtitle {
   color: #2d6683;

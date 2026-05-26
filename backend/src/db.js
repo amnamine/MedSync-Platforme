@@ -100,6 +100,80 @@ async function initDb() {
     )
   `);
 
+  await run(`
+    CREATE TABLE IF NOT EXISTS rapports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      medecin_id INTEGER NOT NULL,
+      patient_id INTEGER NOT NULL,
+      diagnostic TEXT NOT NULL,
+      traitement TEXT,
+      recommandations TEXT,
+      date_rapport TEXT NOT NULL,
+      FOREIGN KEY(medecin_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(patient_id) REFERENCES patients(id) ON DELETE CASCADE
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS salles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nom TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'consultation',
+      statut TEXT NOT NULL DEFAULT 'libre',
+      capacite INTEGER NOT NULL DEFAULT 1
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS consultations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      patient_id INTEGER NOT NULL,
+      medecin_id INTEGER NOT NULL,
+      date_consultation TEXT NOT NULL,
+      motif TEXT NOT NULL,
+      statut TEXT NOT NULL DEFAULT 'Planifiée',
+      FOREIGN KEY(patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+      FOREIGN KEY(medecin_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS operations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      patient_id INTEGER NOT NULL,
+      chirurgien_id INTEGER NOT NULL,
+      salle_id INTEGER,
+      date_operation TEXT NOT NULL,
+      type_operation TEXT NOT NULL,
+      statut TEXT NOT NULL DEFAULT 'programmée',
+      FOREIGN KEY(patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+      FOREIGN KEY(chirurgien_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(salle_id) REFERENCES salles(id) ON DELETE SET NULL
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS reservations_salles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      salle_id INTEGER NOT NULL,
+      patient_id INTEGER NOT NULL,
+      medecin_id INTEGER,
+      date_debut TEXT NOT NULL,
+      date_fin TEXT NOT NULL,
+      motif TEXT,
+      statut TEXT NOT NULL DEFAULT 'planifiée',
+      FOREIGN KEY(salle_id) REFERENCES salles(id) ON DELETE CASCADE,
+      FOREIGN KEY(patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+      FOREIGN KEY(medecin_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+
+  try {
+    await run("ALTER TABLE urgences ADD COLUMN medecin_id INTEGER REFERENCES users(id)");
+  } catch {
+    /* column may already exist */
+  }
+
   const count = await get("SELECT COUNT(*) as total FROM users");
   if (!count || count.total === 0) {
     await run(
@@ -107,7 +181,10 @@ async function initDb() {
        VALUES
        ('Admin MedSync', 'admin@medsync.dz', 'admin123', 'administrateur', '0550000001', 1, datetime('now')),
        ('Dr Samir Belkacem', 'medecin@medsync.dz', 'medecin123', 'médecin généraliste', '0550000002', 1, datetime('now')),
-       ('Nadia Infirmière', 'infirmier@medsync.dz', 'inf123', 'infirmier', '0550000003', 1, datetime('now'))
+       ('Dr Leila Cardio', 'specialiste@medsync.dz', 'spec123', 'spécialiste', '0550000004', 1, datetime('now')),
+       ('Dr Omar Chirurgie', 'chirurgien@medsync.dz', 'chir123', 'chirurgien', '0550000005', 1, datetime('now')),
+       ('Nadia Infirmière', 'infirmier@medsync.dz', 'inf123', 'infirmier', '0550000003', 1, datetime('now')),
+       ('Sara Secrétaire', 'secretaire@medsync.dz', 'sec123', 'secrétaire médicale', '0550000006', 1, datetime('now'))
       `
     );
 
@@ -115,7 +192,10 @@ async function initDb() {
       `INSERT INTO permissions (user_id, code) VALUES
        (1, 'users.read'), (1, 'users.write'), (1, 'urgences.read'), (1, 'stats.read'),
        (2, 'patients.read'), (2, 'urgences.read'),
-       (3, 'urgences.write'), (3, 'patients.read')`
+       (3, 'patients.read'), (3, 'urgences.read'),
+       (4, 'urgences.read'), (4, 'patients.read'),
+       (5, 'urgences.write'), (5, 'patients.read'),
+       (6, 'patients.read'), (6, 'patients.write')`
     );
 
     await run(
@@ -135,6 +215,102 @@ async function initDb() {
        (2, 'Urgence critique: Karim Meziane', 'urgence', 'non_lu'),
        (1, 'Nouveau compte utilisateur créé', 'système', 'lu')`
     );
+
+    await run(
+      `INSERT INTO plannings (medecin_id, date, horaire) VALUES
+       (2, date('now'), '08:00-12:00'),
+       (2, date('now', '+1 day'), '14:00-18:00')`
+    );
+
+    await run(
+      `INSERT INTO salles (nom, type, statut, capacite) VALUES
+       ('Salle Consultation A', 'consultation', 'libre', 2),
+       ('Bloc Opératoire 1', 'bloc', 'occupée', 1),
+       ('Salle Urgences', 'urgence', 'libre', 4)`
+    );
+
+    await run(
+      `INSERT INTO rapports (medecin_id, patient_id, diagnostic, traitement, recommandations, date_rapport) VALUES
+       (2, 1, 'Hypertension artérielle', 'Amlodipine 5mg', 'Contrôle tension dans 15 jours', datetime('now')),
+       (2, 2, 'Asthme léger', 'Ventoline au besoin', 'Éviter allergènes connus', datetime('now'))`
+    );
+  }
+
+  const sallesCount = await get("SELECT COUNT(*) as total FROM salles");
+  if (!sallesCount || sallesCount.total === 0) {
+    await run(
+      `INSERT INTO salles (nom, type, statut, capacite) VALUES
+       ('Salle Consultation A', 'consultation', 'libre', 2),
+       ('Bloc Opératoire 1', 'bloc', 'occupée', 1),
+       ('Salle Urgences', 'urgence', 'libre', 4)`
+    );
+  }
+
+  const planningsCount = await get("SELECT COUNT(*) as total FROM plannings");
+  if (!planningsCount || planningsCount.total === 0) {
+    const medecin = await get("SELECT id FROM users WHERE role LIKE '%médecin%' LIMIT 1");
+    if (medecin) {
+      await run(
+        `INSERT INTO plannings (medecin_id, date, horaire) VALUES
+         (?, date('now'), '08:00-12:00'),
+         (?, date('now', '+1 day'), '14:00-18:00')`,
+        [medecin.id, medecin.id]
+      );
+    }
+  }
+
+  const rapportsCount = await get("SELECT COUNT(*) as total FROM rapports");
+  if (!rapportsCount || rapportsCount.total === 0) {
+    const medecin = await get("SELECT id FROM users WHERE role LIKE '%médecin%' LIMIT 1");
+    if (medecin) {
+      await run(
+        `INSERT INTO rapports (medecin_id, patient_id, diagnostic, traitement, recommandations, date_rapport) VALUES
+         (?, 1, 'Hypertension artérielle', 'Amlodipine 5mg', 'Contrôle tension dans 15 jours', datetime('now')),
+         (?, 2, 'Asthme léger', 'Ventoline au besoin', 'Éviter allergènes connus', datetime('now'))`,
+        [medecin.id, medecin.id]
+      );
+    }
+  }
+
+  const extraRoles = [
+    ["Dr Leila Cardio", "specialiste@medsync.dz", "spec123", "spécialiste", "0550000004"],
+    ["Dr Omar Chirurgie", "chirurgien@medsync.dz", "chir123", "chirurgien", "0550000005"],
+    ["Sara Secrétaire", "secretaire@medsync.dz", "sec123", "secrétaire médicale", "0550000006"],
+  ];
+  for (const [nom, email, password, role, tel] of extraRoles) {
+    const exists = await get("SELECT id FROM users WHERE email = ?", [email]);
+    if (!exists) {
+      await run(
+        "INSERT INTO users (nom, email, password, role, telephone, actif, derniere_connexion) VALUES (?, ?, ?, ?, ?, 1, datetime('now'))",
+        [nom, email, password, role, tel]
+      );
+    }
+  }
+
+  const consultCount = await get("SELECT COUNT(*) as total FROM consultations");
+  if (!consultCount || consultCount.total === 0) {
+    const medecin = await get("SELECT id FROM users WHERE role LIKE '%médecin%' LIMIT 1");
+    if (medecin) {
+      await run(
+        `INSERT INTO consultations (patient_id, medecin_id, date_consultation, motif, statut) VALUES
+         (1, ?, datetime('now', '+1 day'), 'Contrôle tension', 'Planifiée'),
+         (2, ?, datetime('now', '+2 day'), 'Suivi asthme', 'Planifiée')`,
+        [medecin.id, medecin.id]
+      );
+    }
+  }
+
+  const opsCount = await get("SELECT COUNT(*) as total FROM operations");
+  if (!opsCount || opsCount.total === 0) {
+    const chir = await get("SELECT id FROM users WHERE role = 'chirurgien' LIMIT 1");
+    const bloc = await get("SELECT id FROM salles WHERE type = 'bloc' LIMIT 1");
+    if (chir) {
+      await run(
+        `INSERT INTO operations (patient_id, chirurgien_id, salle_id, date_operation, type_operation, statut) VALUES
+         (1, ?, ?, datetime('now', '+3 day'), 'Chirurgie cardiaque programmée', 'programmée')`,
+        [chir.id, bloc?.id || null]
+      );
+    }
   }
 }
 
