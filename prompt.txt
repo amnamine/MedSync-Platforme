@@ -1,0 +1,54 @@
+Crée maintenant le module Administration Utilisateurs MedSync Platform.
+
+MISSION :
+Créer un système complet de gestion des comptes utilisateurs.
+
+FONCTIONNALITÉS :
+
+1. créer utilisateur
+2. modifier utilisateur
+3. supprimer utilisateur
+4. désactiver compte
+5. réinitialiser mot de passe
+6. recherche utilisateurs
+7. filtres par rôle
+8. filtres actif/inactif
+9. voir détails utilisateur
+10. voir dernière connexion
+11. gérer permissions
+12. changer rôle utilisateur
+
+RÔLES :
+
+* administrateur
+* médecin généraliste
+* spécialiste
+* chirurgien
+* infirmier
+* secrétaire médicale
+
+UI/UX :
+
+* table premium moderne
+* modals glassmorphism
+* animations fluides
+* badges rôles colorés
+* confirmations suppression
+* notifications succès/erreur
+* responsive
+
+IMPORTANT :
+
+* composants séparés
+* clean architecture
+* validations formulaires
+* reusable components
+
+DONNE :
+
+* pages
+* composants
+* modals
+* forms
+* animations
+* imports complets
